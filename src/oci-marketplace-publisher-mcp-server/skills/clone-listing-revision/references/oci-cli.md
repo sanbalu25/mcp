@@ -17,7 +17,7 @@ This release is configured for Marketplace production only:
 
 The production Console and Publisher API are different services from OCI identity. `oci session authenticate` generates the standard regional OCI login URL; in CLI 3.64, `--endpoint` does not change browser login. Preserve that generated URL exactly. Never replace its hostname with `cloud.oracle.com` or use the Console website as an API endpoint. Use the publisher's freshly selected tenancy; the production environment does not identify an account or compartment.
 
-Set `publisher_endpoint` and `region` to the values above. Apply `--endpoint "$publisher_endpoint"` explicitly to every `marketplace-publisher` command, including discovery, package/attachment checks, clone, work requests, polling, and final verification. The clone's built-in waiter uses the same client. Do not pass this override to `session` or `iam` commands; they use regional OCI identity services. Keep Production/Ashburn in the evidence record; mention it to the publisher only when needed to distinguish a choice or resolve a problem. If production is unreachable or access is denied, report that limitation and resolve production access; never retry against staging or beta. This skill supports production only; a different production region requires verified routing before any access.
+Set `publisher_endpoint` and `region` to the values above. Apply `--endpoint "$publisher_endpoint"` explicitly to every `marketplace-publisher` command, including discovery, package/attachment checks, clone, work requests, polling, and final verification. The clone's built-in waiter uses the same client. Do not pass this override to `session` or `iam` commands; they use regional OCI identity services. Keep Production/Ashburn in the evidence record; mention it to the publisher only when needed to distinguish a choice or resolve a problem. If production or required resource reads are unreachable or denied, report that limitation and resolve access; work-request-only limitations follow the nonblocking rules below. Never retry against staging or beta. This skill supports production only; a different production region requires verified routing before any access.
 
 Prevent inherited endpoint defaults from changing routing: create an empty temporary CLI rc file for this invocation (`empty_cli_rc`), pass it with `--cli-rc-file`, and remove `OCI_CLI_ENDPOINT` only from each child process's environment. The macOS/Linux examples use `env -u OCI_CLI_ENDPOINT`; use equivalent per-process handling elsewhere. Do not edit the user's shell or configuration. Keep the explicit config/profile/region on service calls. A supported production network path and permissions are required; a valid OCI login alone does not verify production access.
 
@@ -64,9 +64,9 @@ oci --endpoint "$publisher_endpoint" marketplace-publisher listing get --listing
 oci --endpoint "$publisher_endpoint" marketplace-publisher publisher get --publisher-id "$publisher_id"
 oci --endpoint "$publisher_endpoint" marketplace-publisher listing-revision-collection list-listing-revisions --listing-id "$listing_id" --compartment-id "$compartment_id" --all
 oci --endpoint "$publisher_endpoint" marketplace-publisher listing-revision get --listing-revision-id "$revision_id"
-oci --endpoint "$publisher_endpoint" marketplace-publisher listing-revision-package-collection list-listing-revision-packages --listing-revision-id "$revision_id" --all
+oci --endpoint "$publisher_endpoint" marketplace-publisher listing-revision-package-collection list-listing-revision-packages --listing-revision-id "$revision_id" --compartment-id "$compartment_id" --all
 oci --endpoint "$publisher_endpoint" marketplace-publisher listing-revision-package get --listing-revision-package-id "$package_id"
-oci --endpoint "$publisher_endpoint" marketplace-publisher listing-revision-attachment-collection list-listing-revision-attachments --listing-revision-id "$revision_id" --all
+oci --endpoint "$publisher_endpoint" marketplace-publisher listing-revision-attachment-collection list-listing-revision-attachments --listing-revision-id "$revision_id" --compartment-id "$compartment_id" --all
 oci --endpoint "$publisher_endpoint" marketplace-publisher work-request list --compartment-id "$compartment_id" --all
 oci --endpoint "$publisher_endpoint" marketplace-publisher work-request get --work-request-id "$work_request_id"
 oci --endpoint "$publisher_endpoint" marketplace-publisher work-request-error list --work-request-id "$work_request_id" --all
@@ -75,9 +75,9 @@ oci --endpoint "$publisher_endpoint" marketplace-publisher work-request-log-entr
 
 Include the root explicitly: IAM subtree results do not include the root. Establish each command's response shape from unprojected evidence for the installed version before applying projections. Fetch all pages, following `opc-next-page` when `--all` is unavailable. Never combine `--all` and `--limit`. Do not filter sibling revision inventory to active records only.
 
-For revision discovery, set `compartment_id` from the retrieved parent listing's `compartment-id` and include it with `listing_id`; production may reject the revision list request without it. Do not substitute the tenancy root unless the parent listing actually belongs there.
+For revision discovery, set `compartment_id` from the retrieved parent listing's `compartment-id` and include it with `listing_id`; production may reject the revision list request without it. Supply that same actual compartment for package and attachment inventories. Do not substitute the tenancy root unless the parent listing actually belongs there.
 
-Filter work requests to the selected listing or its revision IDs using returned resource references and operation types; unrelated compartment work requests do not block cloning. A denied work request listing is a capability gap: check revision transitions and known operation IDs, then mark unresolved operation evidence Needs verification if it prevents establishing that cloning is safe. Do not assume no operation exists.
+Filter work requests to the selected listing or its revision IDs using returned resource references and operation types; unrelated compartment work requests do not block cloning. If listing is denied or unavailable, try GET for a known relevant request when accessible. A denied or unavailable listing/GET alone does not block eligibility: check current parent/source state, every sibling page, and any accessible known requests, and record the visibility limitation internally. Do not repeatedly retry a known-denied read in the same scope, infer exhaustive absence of operations, request Console activity evidence, or add another clone confirmation. An otherwise eligible selected revision proceeds after refresh; the service validates concurrent conflicts on clone. Actual nonterminal conflicting operations, partial drafts, and uncertain prior-clone outcomes still require [reconciliation](publisher-flow.md#recovery-decisions); never resend an unresolved clone.
 
 ### Compact output
 
@@ -103,7 +103,7 @@ Keep work request `resources` whole, including resource metadata used for attrib
 
 ### Clone request
 
-After passing preflight and source selection, execute exactly one mutation:
+After passing preflight, obtaining clone authorization, and completing the final refresh, execute exactly one mutation. A numbered selection in response to explicit clone choices is authorization; do not ask again. An inspection-only selection does not authorize this command. Work-request visibility limitations alone do not prevent it:
 
 ```sh
 env -u OCI_CLI_ENDPOINT oci --cli-rc-file "$empty_cli_rc" --config-file "$config_file" --profile "$session_profile" --auth security_token --region "$region" --endpoint "$publisher_endpoint" --output json --no-retry marketplace-publisher listing-revision clone --listing-revision-id "$revision_id" --if-match "$etag"

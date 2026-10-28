@@ -4,21 +4,26 @@ Show only what the publisher needs to choose a listing/revision, complete an act
 
 Bundle independent missing details into one concise question when useful; avoid asking for information the session or listing can provide. Resolve ambiguous identity/source selection separately. A bundled reply is not blanket authorization or evidence that unrelated checks pass. When sign-in requires the publisher's action, say only: “Complete Oracle sign-in in the tab that opened.”
 
-Use only OCI CLI for service actions. The publisher completes Oracle browser login and supplies any needed Console/Oracle confirmation themselves; no MCP server or browser automation is needed.
+Use only OCI CLI for service actions. The publisher completes Oracle browser login and supplies any required evidence for other blocking checks themselves; no MCP server or browser automation is needed. Work-request visibility gaps do not require a Console activity check or another clone confirmation.
 
 ## Options and checks
 
-Example layout only; populate it from real reads:
+For a cloning request or a bare `$clone-listing-revision` invocation, automatically check the sources and show only eligible revisions as numbered clone choices. Example layout only; populate it from real reads:
 
-| Option | Listing | Revision | Status | Readiness / next action |
+| Option | Listing | Revision | Status | Readiness |
 |---|---|---|---|---|
 | 1 | Analytics Connector | 4 | Published | Ready to clone |
-| 2 | Data Connector | 2 | Published as private | Existing draft: continue revision 3 |
-| 3 | Reporting App | 7 | Published | Ready to clone |
+| 2 | Reporting App | 7 | Published | Ready to clone |
 
-Show the publisher or compartment only when needed to disambiguate names. Keep exact source/parent IDs mapped to each option and its production environment/endpoint in the working record; show a source ID only when needed to identify the chosen revision. Offer “Clone option 1” only for a ready option. Obtain the publisher's choice at the listing/revision level; an unambiguous existing request to clone that source already authorizes it and needs no repeated confirmation. Before cloning, identify the selected listing/revision and state that it will create a new draft. Do not ask for public/private visibility: cloning produces a draft.
+“Reply with an option number to clone that revision into a new draft.”
 
-Run and retain every check, recording whether it is blocking or advisory alongside Pass, Needs attention, Needs verification, or Not applicable. A ready option has passed all blocking checks; OPN/OCMA issues or missing evidence do not remove it from the choices or require acknowledgment. In customer responses, show only blockers and the specific next action; use a short list or **Blocker | Action needed** table when several apply. Share a publisher-level blocker once across affected candidates. If a detailed checklist is requested, include advisory results with their nonblocking role. Do not ask the publisher to approve away an unresolved blocking check.
+Show blockers separately, for example: “Data Connector already has draft revision 3; continue that draft.” Do not number blocked candidates as clone choices.
+
+Show the publisher or compartment only when needed to disambiguate names. Keep exact source/parent IDs mapped to each option and its production environment/endpoint in the working record; show a source ID only when needed to identify the chosen revision. A reply such as “1,” “option 1,” or “Clone option 1” to these explicit clone choices authorizes that source. Identify the selected listing/revision briefly, run the final refresh, and immediately clone if it remains eligible and unchanged. Do not add a separate confirmation or ask the publisher to check Console activity. An unambiguous existing request to clone a source already authorizes it and needs no selection round. Do not ask for public/private visibility: cloning produces a draft.
+
+For a request only to inspect or check eligibility, label any choices as inspection choices and keep the flow read-only. A numbered reply to those choices authorizes only inspection; require a request to clone before a mutation. A listing-only choice that does not identify the source revision likewise narrows discovery rather than authorizing a clone.
+
+Run and retain every check, recording whether it is blocking or advisory alongside Pass, Needs attention, Needs verification, or Not applicable. A ready option has passed all blocking checks; OPN/OCMA issues or missing evidence do not remove it from the choices or require acknowledgment. Unavailable work-request listing/GET is recorded internally and does not remove an otherwise eligible source from these choices. Actual conflicting operation evidence or an unresolved earlier clone still blocks a new clone under the [operation evidence rules](checks.md#access-and-operation-evidence). In customer responses, show only blockers and the specific next action; use a short list or **Blocker | Action needed** table when several apply. Share a publisher-level blocker once across affected candidates. If a detailed checklist is requested, include advisory results with their nonblocking role and the work-request visibility limitation. Do not ask the publisher to approve away an unresolved blocking check.
 
 Keep OPN/OCMA advisories for the [approval notice](#approval-notice) after successful cloning. Do not require agreement evidence, renewal, or acknowledgment before the clone. Apply [evidence reuse](checks.md#evidence-reuse) to current, matching evidence already available; missing evidence remains unverified, not expired.
 
@@ -26,7 +31,7 @@ Keep OPN/OCMA advisories for the [approval notice](#approval-notice) after succe
 
 Preserve request/work request IDs and the pre-clone sibling inventory. Resolve a missing draft ID from work request resources, source lineage, and before/after sibling IDs; never guess the newest revision. Once attributable, use that draft's direct GET instead of repeatedly discovering it.
 
-- With a known work request, poll its projected GET; with only an attributable draft, poll its projected direct GET. Re-read the draft when work request state/resources change or verification is due. If neither ID is known, use scoped work request/sibling discovery to resolve the outcome.
+- With an accessible known work request, poll its projected GET; with only an attributable draft or unavailable work-request GET, poll the draft's projected direct GET. Re-read the draft when work request state/resources change or verification is due. If the draft ID is unknown, use accessible scoped work-request reads, source lineage, and complete sibling discovery to resolve the outcome. Preserve known nonterminal/uncertain operation evidence; an inaccessible request does not authorize a replacement clone.
 - Back off between unchanged observations, for example 5, 10, 20, then 30 seconds, capped at 30 seconds. Reset on meaningful change. Bound the entire interactive observation to ten minutes and keep waits interruptible. Report meaningful progress, actionable results, or required next steps briefly; do not narrate each internal state transition or poll.
 - Refresh all sibling pages when attributing an unknown draft, when operation state changes, after a conflict/timeout, and for final verification. With a known request and unchanged state/resources, avoid repeating broad discovery just because the draft ID is still unknown.
 - On completion, perform every [completion check](checks.md#completion), including detailed copied-content/package/attachment comparisons and the source publication-status check. A projected status response is not full copy verification. Failed, canceled, ambiguous, or timed-out outcomes follow the recovery rules below; never resend an unresolved clone.
@@ -42,14 +47,15 @@ Preserve request/work request IDs and the pre-clone sibling inventory. Resolve a
 | Login opens in a different Chrome profile or authenticators are unavailable there | Keep the pending CLI login alive and open its exact generated URL in the publisher's existing profile containing their authenticators. Resolve an unknown profile choice without changing browser data or starting another OCI login |
 | Login completed without a supplied target tenancy | Automatically discover its compartments/listings without a tenancy confirmation or sign-in success announcement; retain authenticated identity and region in the working record |
 | Browser selected a tenancy different from an explicitly supplied target | Briefly ask the publisher to sign in to the requested account, then verify it before discovery; do not query the known-wrong tenancy or ask the publisher to approve the mismatch |
-| Production endpoint unreachable or denied | Explain the specific access/network blocker and next action; include endpoint/region details only when needed to resolve it. Do not try staging or beta endpoints |
+| Production endpoint or required resource reads unreachable or denied | Explain the specific access/network blocker and next action; include endpoint/region details only when needed to resolve it. Apply the work-request-only exception below when those are the unavailable reads. Do not try staging or beta endpoints |
 | Supplied link or saved operation belongs to another environment | Resolve the environment mismatch before inspecting resources; do not carry source choices, approval evidence, or operation IDs across environments |
-| OCI says NotAuthorizedOrNotFound | Say “OCI could not authorize this lookup or locate the resource.” Check account/region and the supplied resource once; ask for the intended Console link or administrator assistance. Do not say the resource is missing or that the session token is invalid |
+| A required resource read says NotAuthorizedOrNotFound | Say “OCI could not authorize this lookup or locate the resource.” Check account/region and the supplied resource once; ask for the intended Console link or administrator assistance. Use the exception below for work-request reads. Do not say the resource is missing or that the session token is invalid |
+| Work-request listing or GET denied/unavailable | Use current parent/source/sibling state and any accessible known requests; record the visibility limitation internally. If other checks pass and no concrete conflicting or unresolved prior-clone evidence exists, keep the revision eligible and proceed on its clone-choice selection after refresh. Do not ask for Console activity confirmation or repeated clone authorization |
 | IAM compartment listing denied | Use a supplied listing/revision directly, or request a compartment/Console link; do not require broad IAM policy administration |
 | No candidates | Explain whether discovery completed or was partial, and whether an existing draft or unsupported state explains the result |
 | Existing active draft | Identify the listing and draft revision and suggest continuing it; include a verified Console link or ID when needed to locate it. Editing/deletion needs its own request |
 | NEW draft is updating | Explain a clone/update may still be running; inspect its known request and wait, rather than submitting another clone |
-| Stale ETag / state conflict | Re-read source, siblings, and work requests; show the changed result. Do not force or automatically retry |
+| Stale ETag / state conflict | Re-read source, siblings, and accessible relevant work requests; show the changed result. Do not force or automatically retry |
 | Network/command timeout after clone | Mark the outcome uncertain and inspect known request plus sibling inventory. Never resend until the earlier outcome is resolved |
 | Definite clone failure | Report the service reason and smallest next action. Preserve request/partial draft IDs; show a draft ID to locate it and a request ID when troubleshooting needs it. Retry needs fresh checks and publisher authorization |
 | Ten-minute observation limit reached | For a known nonterminal operation, say “Clone is still in progress for [listing].” If attribution or outcome remains unresolved, say “Outcome uncertain.” Preserve source/work request IDs and context so a later “check again” inspects the same operation; expose IDs only when needed to resolve the outcome |
