@@ -39,7 +39,7 @@ Copy the entire `skills/clone-listing-revision` directory from a pinned checkout
 Use $clone-listing-revision to show which of my listings I can clone.
 ```
 
-After reviewing the results, select a source with a request such as `Clone option 2`. The skill checks publisher ownership and readiness, active OPN membership and OCMA, publisher logo, source status, conflicting drafts or operations, and applicable package defaults, version uniqueness, and whitespace rules. When the CLI cannot provide required evidence, it asks for the specific current Console or Oracle confirmation and keeps cloning blocked until verified.
+After reviewing the results, select a source with a request such as `Clone option 2`. The skill checks publisher ownership and approval, publisher logo, source status, conflicting drafts or operations, and applicable package defaults, version uniqueness, and whitespace rules. Missing evidence for these blocking checks requires specific current Console or Oracle confirmation. OPN membership and OCMA are nonblocking advisories: inactive, expired, unapproved, or unavailable status does not delay cloning or require acknowledgment. After a verified successful clone, any OPN/OCMA advisory triggers a prominent message that OCMA must be approved and current before the listing revision can be approved, with actions based on observed statuses. Unknown status is not described as expired. Service-side rejections still stop the operation.
 
 The skill refreshes the checks before sending one clone request, verifies the new draft, and resumes inspection after an uncertain result without resending the request. Editing, submission, and publication require separate requests.
 
