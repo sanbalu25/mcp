@@ -7,7 +7,7 @@ description: Helps OCI Marketplace publishers create a new draft by cloning an e
 
 Guide a publisher from Oracle sign-in to a verified new draft under the same listing. Run the CLI work for them and explain results in plain language. The only service integration required is the installed OCI CLI, which Codex runs through the local terminal. The publisher completes the browser login opened by OCI CLI. Creating or reviewing the skill is not a request to clone a live resource.
 
-Read [OCI access and commands](references/oci-cli.md) before access, [required checks](references/checks.md) before deciding eligibility, and [publisher responses and recovery](references/publisher-flow.md) when presenting choices or handling a blocker.
+Load [OCI access and commands](references/oci-cli.md) before access, [required checks](references/checks.md) before deciding eligibility, and [publisher responses and recovery](references/publisher-flow.md) when presenting choices, observing a clone, or handling a blocker. Reuse already loaded references unless their contents change.
 
 ## OCI CLI-only execution
 
@@ -33,6 +33,8 @@ Prefer the supplied listing or compartment. Otherwise search the tenancy root an
 
 Read the parent listing, its actual publisher, and all sibling revision pages. Consider supported published sources for cloning. An existing active/updating `NEW` draft blocks another clone: show that draft and the appropriate next step. Check a narrowed candidate before performing expensive inventory reads; do not require publisher-wide package scans to inspect one source.
 
+Use the command reference's output projections for discovery and polling. Keep the [scoped evidence record](references/checks.md#evidence-reuse) to deduplicate reads within a discovery pass and share publisher evidence across candidates. These optimizations do not replace detailed validation or the complete final refresh below.
+
 ## 3. Check eligibility
 
 Evaluate all applicable rules in [required checks](references/checks.md), including:
@@ -57,9 +59,9 @@ Send one clone request with the latest ETag when available and automatic mutatio
 
 ## 5. Verify and hand back the draft
 
-Poll separately in short intervals, checking both the work request and fresh sibling revisions. Keep the publisher informed while waiting, for up to ten minutes. If the initial response has no draft ID, resolve it from work request resources/source lineage and the before/after revision inventory. A successful command or accepted request alone is not completion.
+Follow [targeted polling](references/publisher-flow.md#observe-the-clone): poll known operation/draft IDs with backoff for up to ten minutes, expanding sibling discovery when attribution, state changes, conflicts, timeout, or final verification require it. A successful command or accepted request alone is not completion.
 
-Report success only for a distinct, attributable revision under the same listing with `status == NEW` and `lifecycle-state == ACTIVE`, plus a successful work request when available. Verify copied content/inventory as described in the checks. If attribution or copying is uncertain, report “Created, verification pending” with the known draft ID, rather than “Ready.” Preserve the source's publication status and flag unexpected changes.
+Report success only for a distinct, attributable revision under the same listing with `status == NEW` and `lifecycle-state == ACTIVE`, plus a successful work request when available. Verify copied content/inventory as described in the checks. For an attributable draft with incomplete copy verification, report “Created, verification pending” with its ID. If attribution is unresolved, report “Outcome uncertain” and retain any candidate IDs without choosing one. Preserve the source's publication status and flag unexpected changes.
 
 On timeout or interruption, retain nonsecret context in the chat: profile/config path, region, parent/source IDs, baseline sibling IDs, and known request/draft IDs. Resume inspection of that operation; do not issue another clone. Handle definite failures through [recovery guidance](references/publisher-flow.md). Finish with the new draft ID and next action. Editing, submission, and publication require separate requests.
 

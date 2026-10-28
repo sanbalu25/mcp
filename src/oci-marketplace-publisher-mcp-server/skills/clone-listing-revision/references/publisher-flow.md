@@ -1,6 +1,6 @@
 # Publisher responses and recovery
 
-Lead with the outcome or next action. Use listing/publisher names and revision numbers first; retain full OCIDs for exact selections and recovery. Show evidence without raw auth output, signed asset URLs, or long JSON dumps. Ask one focused question at a time, and avoid requesting information the session or listing can provide.
+Lead with the outcome or next action. Use listing/publisher names and revision numbers first; retain full OCIDs for exact selections and recovery. Show evidence without raw auth output, signed asset URLs, or long JSON dumps. Bundle independent missing details into one concise question when useful; avoid asking for information the session or listing can provide. Resolve ambiguous identity/source selection separately. A bundled reply is not blanket authorization or evidence that unrelated checks pass.
 
 Use only OCI CLI for service actions. The publisher completes Oracle browser login and supplies any needed Console/Oracle confirmation themselves; no MCP server or browser automation is needed.
 
@@ -18,7 +18,16 @@ Show the account/compartment when it disambiguates otherwise identical names. Ke
 
 Summarize checks with a short table: **Check | Result | Evidence or next action**. For multiple candidates, share publisher-level evidence once and report revision/package differences separately. Use Pass, Needs attention, Needs verification, Not applicable consistently. Do not ask the publisher to approve away an unresolved check.
 
-For a blocked OCMA check, say for example: “The installed OCI CLI does not show current OCMA validity. Check the agreement for OPN [observed number] in your Publisher account and provide its status and validity dates, or Oracle's current-active confirmation.” Reuse previously provided current, matching evidence; do not re-ask without a reason.
+For a blocked OCMA check, say for example: “The installed OCI CLI does not show current OCMA validity. Check the agreement for OPN [observed number] in your Publisher account and provide its status and validity dates, or Oracle's current-active confirmation.” Apply [evidence reuse](checks.md#evidence-reuse) to current, matching confirmations.
+
+## Observe the clone
+
+Preserve request/work request IDs and the pre-clone sibling inventory. Resolve a missing draft ID from work request resources, source lineage, and before/after sibling IDs; never guess the newest revision. Once attributable, use that draft's direct GET instead of repeatedly discovering it.
+
+- With a known work request, poll its projected GET; with only an attributable draft, poll its projected direct GET. Re-read the draft when work request state/resources change or verification is due. If neither ID is known, use scoped work request/sibling discovery to resolve the outcome.
+- Back off between unchanged observations, for example 5, 10, 20, then 30 seconds, capped at 30 seconds. Reset on meaningful change. Bound the entire interactive observation to ten minutes and keep waits interruptible. Report status changes and actionable results; do not echo unchanged JSON or each poll.
+- Refresh all sibling pages when attributing an unknown draft, when operation state changes, after a conflict/timeout, and for final verification. With a known request and unchanged state/resources, avoid repeating broad discovery just because the draft ID is still unknown.
+- On completion, perform every [completion check](checks.md#completion), including detailed copied-content/package/attachment comparisons and the source publication-status check. A projected status response is not full copy verification. Failed, canceled, ambiguous, or timed-out outcomes follow the recovery rules below; never resend an unresolved clone.
 
 ## Recovery decisions
 

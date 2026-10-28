@@ -2,6 +2,12 @@
 
 Use detailed current records and complete pagination. Use JSON from OCI CLI; map the actual returned field names, commonly kebab-case. All service reads in this reference must use installed OCI CLI commands. Console/Oracle evidence is supplied by the publisher, not retrieved with an MCP server or automated browser. Treat missing or contradictory evidence as **Needs verification**, invalid evidence as **Needs attention**, and apply **Not applicable** only when the listing type establishes it. Only Pass/Not applicable permit cloning. Report blocking reasons even if other independent checks pass.
 
+## Evidence reuse
+
+Within one discovery pass, reuse reads by bound tenancy/profile/region, resource type, and full resource ID. Share publisher-level evidence across candidates of that publisher; fetch each required detail once. Keep a compact record of scope, parent/source/publisher IDs, observed states, read times, pagination completeness, ETag/request IDs when exposed, check results, and unresolved fields. For external evidence retain its source, matching publisher/OPN entity, verification time, and validity. Reuse it while current and matching; do not re-ask without a reason.
+
+Missing/projected-out fields require detailed reads, not an inferred pass. Invalidate relevant evidence on scope changes, changed states, contradictions, or expiry. Start a new service-read cache for each discovery pass; retain external evidence only while current and matching. Immediately before cloning, refresh the source, parent, publisher, every sibling page, package inventory/details, and relevant operation evidence, and revalidate external evidence. A cached record or source ETag cannot establish that sibling/package state is unchanged.
+
 ## Identity and publisher
 
 | Check | Pass evidence | If it cannot pass |
