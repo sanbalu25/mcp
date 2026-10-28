@@ -1,4 +1,4 @@
 interface:
   display_name: "Clone listing revision"
-  short_description: "Clone Marketplace revisions using OCI CLI only"
-  default_prompt: "Use $clone-listing-revision to sign me in, show my eligible Marketplace revisions, and help me clone one into a new draft."
+  short_description: "Clone staging Marketplace revisions using OCI CLI"
+  default_prompt: "Use $clone-listing-revision to sign me in, show my eligible staging Marketplace revisions, and help me clone one into a new draft."

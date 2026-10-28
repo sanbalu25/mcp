@@ -4,7 +4,7 @@ Use detailed current records and complete pagination. Use JSON from OCI CLI; map
 
 ## Evidence reuse
 
-Within one discovery pass of the freshly authenticated invocation, reuse reads by bound tenancy/profile/region, resource type, and full resource ID. Share publisher-level evidence across candidates of that publisher; fetch each required detail once. Keep a compact record of scope, parent/source/publisher IDs, observed states, read times, pagination completeness, ETag/request IDs when exposed, check results, and unresolved fields. For external evidence retain its source, matching publisher/OPN entity, verification time, and validity. Reuse it only after matching it to the freshly verified publisher; evidence never selects the login account.
+Within one discovery pass of the freshly authenticated invocation, reuse reads by bound environment/endpoint/tenancy/profile/region, resource type, and full resource ID. Share publisher-level evidence across candidates of that publisher; fetch each required detail once. Keep a compact record of scope, parent/source/publisher IDs, observed states, read times, pagination completeness, ETag/request IDs when exposed, check results, and unresolved fields. For external evidence retain its source, matching environment and publisher/OPN entity, verification time, and validity. Reuse it only after matching it to the freshly verified staging publisher; evidence never selects the login account. Production service records or approvals do not establish staging readiness.
 
 Missing/projected-out fields require detailed reads, not an inferred pass. Invalidate relevant evidence on scope changes, changed states, contradictions, or expiry. Start a new service-read cache for each discovery pass; retain external evidence only while current and matching. Immediately before cloning, refresh the source, parent, publisher, every sibling page, package inventory/details, and relevant operation evidence, and revalidate external evidence. A cached record or source ETag cannot establish that sibling/package state is unchanged.
 
@@ -12,6 +12,7 @@ Missing/projected-out fields require detailed reads, not an inferred pass. Inval
 
 | Check | Pass evidence | If it cannot pass |
 |---|---|---|
+| Environment | Phoenix staging is announced and every Publisher command explicitly uses the configured beta endpoint; OCI identity calls use their own service | Resolve endpoint/region mismatch or staging access before discovery/clone; never fall back to production |
 | Session | New isolated browser login and unused OCI profile for this invocation, successful `oci session validate`, and actual tenancy/region matched to the publisher's current selection | Complete fresh login and account verification before discovery; never reuse a previous invocation's credentials |
 | Ownership | Parent listing's `publisher-id` resolves to the intended publisher in the authenticated tenancy and authorized compartment | Resolve the selected account/listing first; use compartment ancestry if needed |
 | Publisher registration | Detailed `publisher-status == APPROVED`; no authoritative suspension indication | Show the exact status and direct the publisher to their Publisher profile/support |

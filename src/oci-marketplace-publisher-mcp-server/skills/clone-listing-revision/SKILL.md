@@ -1,6 +1,6 @@
 ---
 name: clone-listing-revision
-description: Helps OCI Marketplace publishers create a new draft by cloning an existing listing revision. Use when a publisher asks to clone a revision or find revisions eligible for cloning; starts a fresh isolated browser login and checks eligibility before cloning.
+description: Helps OCI Marketplace publishers clone an eligible listing revision into a new draft in staging. Use to clone a staging revision or find eligible staging sources; starts a fresh isolated browser login and checks eligibility before cloning.
 ---
 
 # Clone listing revision
@@ -15,15 +15,17 @@ Use `oci` commands for authentication, discovery, checks, cloning, and status po
 
 Any Console step is performed by the publisher, not browser automation. Treat a pasted Console link as a resource locator: extract an OCID/region only when present and verify them through OCI CLI; otherwise ask for the resource OCID. For checks absent from installed CLI output, request the specific publisher-provided evidence described below and keep the check blocked until verified. Never require a missing integration or invent an API/CLI command to fill the gap.
 
+This version targets **Staging — Phoenix (`us-phoenix-1`)**. Use `https://cloud-staging.oracle.com` for Publisher Console guidance and the explicit staging Publisher endpoint in [environment routing](references/oci-cli.md#staging-environment) for every Publisher read, clone, and poll. Announce the environment before login. Do not fall back to production or infer a tenancy from the environment. A request for another environment/region needs a verified configuration before access.
+
 ## 1. Sign in to the publisher account
 
 At every new invocation, including a repeated `$clone-listing-revision` invocation or explicit restart, explain the requested inspection or cloning task, then say: “First, sign in to the OCI tenancy that owns your Marketplace listings.” Check OCI CLI availability; if missing, give the official setup link in the command reference and offer setup assistance.
 
 Run a new `oci session authenticate` with an unused dedicated OCI profile and the [isolated browser login](references/oci-cli.md#browser-authentication) procedure. Never reuse an earlier invocation's token, saved profile, browser cookies, tenancy, or compartment, even if its session is valid. A new browser tab/window or OCI profile alone does not provide fresh browser authentication. Let the publisher complete Oracle sign-in and MFA themselves.
 
-Ordinary replies such as “done,” source selection, and polling continue the current invocation; they do not start another login. If a fresh invocation replaces a pending login, stop only that invocation's owned login process and isolated login window before starting the new one; do not leave competing callbacks. After login, validate the new session and bind all reads and the clone to its explicit config, profile, region, and `--auth security_token`.
+Ordinary replies such as “done,” source selection, and polling continue the current invocation; they do not start another login. If a fresh invocation replaces a pending login, stop only that invocation's owned login process and isolated login window before starting the new one; do not leave competing callbacks. After login, validate the new session and bind all reads and the clone to its explicit config, profile, region, and `--auth security_token`. Add the staging endpoint to every Publisher call; keep OCI identity calls on their own service endpoint.
 
-Use only a tenancy/region supplied for this invocation; otherwise use the supported commercial Publisher region (`us-ashburn-1`) and let the publisher select the tenancy during fresh login. Show the authenticated tenancy name when available, its OCID suffix, and region before compartment/listing discovery. Proceed when it matches an account explicitly selected for this invocation. If no account was selected, require the publisher to confirm the observed account first. If a requested name cannot be verified, ask the publisher to identify the intended tenancy by OCID. A valid token does not establish the intended publisher account. If the account is wrong, repeat isolated login without searching its compartments. Never collect passwords, MFA codes, keys, or token contents in chat.
+Use the configured staging region and only a tenancy supplied for this invocation; otherwise let the publisher select the tenancy during fresh login. Show Staging, the authenticated tenancy name when available, its OCID suffix, and region before compartment/listing discovery. Proceed when it matches an account explicitly selected for this invocation. If no account was selected, require the publisher to confirm the observed account first. If a requested name cannot be verified, ask the publisher to identify the intended tenancy by OCID. A valid token does not establish the intended publisher account or staging access. If the account is wrong, repeat isolated login without searching its compartments. Never collect passwords, MFA codes, keys, or token contents in chat.
 
 ## 2. Find the source
 
@@ -63,7 +65,7 @@ Follow [targeted polling](references/publisher-flow.md#observe-the-clone): poll 
 
 Report success only for a distinct, attributable revision under the same listing with `status == NEW` and `lifecycle-state == ACTIVE`, plus a successful work request when available. Verify copied content/inventory as described in the checks. For an attributable draft with incomplete copy verification, report “Created, verification pending” with its ID. If attribution is unresolved, report “Outcome uncertain” and retain any candidate IDs without choosing one. Preserve the source's publication status and flag unexpected changes.
 
-On timeout or interruption, retain nonsecret context in the chat: tenancy, region, parent/source IDs, baseline sibling IDs, and known request/draft IDs. A new invocation must authenticate afresh and verify the same target tenancy before inspecting that saved operation; keep old session details only as history, never as credentials to reuse. Do not issue another clone. Handle definite failures through [recovery guidance](references/publisher-flow.md). Finish with the new draft ID and next action. Editing, submission, and publication require separate requests.
+On timeout or interruption, retain nonsecret context in the chat: environment/endpoint, tenancy, region, parent/source IDs, baseline sibling IDs, and known request/draft IDs. A new invocation must authenticate afresh and verify the same target environment and tenancy before inspecting that saved operation; keep old session details only as history, never as credentials to reuse. Do not issue another clone. Handle definite failures through [recovery guidance](references/publisher-flow.md). Finish with the new draft ID and next action. Editing, submission, and publication require separate requests.
 
 ## Example requests
 

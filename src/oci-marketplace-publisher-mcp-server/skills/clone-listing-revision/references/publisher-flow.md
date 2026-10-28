@@ -14,7 +14,7 @@ Example layout only; populate it from real reads:
 | 2 | Data Connector | 2 | Published as private | Existing draft: continue revision 3 |
 | 3 | Reporting App | 7 | Published | Verify current OCMA status |
 
-Show the account/compartment when it disambiguates otherwise identical names. Keep exact source/parent IDs mapped to each option; show the full selected source ID before cloning. Offer “Clone option 1” only for a ready option. Do not ask for public/private visibility: cloning produces a draft.
+Label choices **Staging — Phoenix** and show the account/compartment when it disambiguates otherwise identical names. Keep exact source/parent IDs mapped to each option and its environment/endpoint; show the full selected source ID before cloning. Offer “Clone option 1” only for a ready option. Do not ask for public/private visibility: cloning produces a draft.
 
 Summarize checks with a short table: **Check | Result | Evidence or next action**. For multiple candidates, share publisher-level evidence once and report revision/package differences separately. Use Pass, Needs attention, Needs verification, Not applicable consistently. Do not ask the publisher to approve away an unresolved check.
 
@@ -39,6 +39,8 @@ Preserve request/work request IDs and the pre-clone sibling inventory. Resolve a
 | Repeated skill invocation or explicit restart | Start a fresh isolated browser login and unused OCI profile, even if the old session is valid. First stop only the prior invocation's owned pending login/window so callbacks do not compete |
 | Login completed without a current account selection | Show actual tenancy name/OCID suffix and region; obtain account confirmation before searching compartments or listings |
 | Browser selected an unexpected tenancy | Repeat isolated login for the intended account and verify it before discovery; do not query known-wrong compartments |
+| Staging endpoint unreachable or denied | Report the staging endpoint/region and specific failure; resolve network/access requirements. Do not try the production Publisher endpoint |
+| Supplied link or saved operation belongs to another environment | Resolve the environment mismatch before inspecting resources; do not carry source choices, approval evidence, or operation IDs across environments |
 | OCI says NotAuthorizedOrNotFound | Say “OCI could not authorize this lookup or locate the resource.” Check account/region and the supplied resource once; ask for the intended Console link or administrator assistance. Do not say the resource is missing or that the session token is invalid |
 | IAM compartment listing denied | Use a supplied listing/revision directly, or request a compartment/Console link; do not require broad IAM policy administration |
 | No candidates | Explain whether discovery completed or was partial, and whether an existing draft or unsupported state explains the result |
@@ -51,18 +53,18 @@ Preserve request/work request IDs and the pre-clone sibling inventory. Resolve a
 
 A ten-minute observation limit bounds the current interactive wait; it does not cancel the service operation or prove failure. Do not create background monitoring unless requested.
 
-Re-entering the skill to check a saved operation requires fresh login and verification of its target tenancy. Preserve prior request/draft IDs for reconciliation, not the previous account as a login default. A new login never authorizes resending an unresolved clone.
+Re-entering the skill to check a saved operation requires fresh login and verification of its target environment, endpoint, region, and tenancy. Preserve prior request/draft IDs for reconciliation, not the previous account as a login default. A new login never authorizes resending an unresolved clone.
 
 ## Final response
 
 Successful example shape (replace placeholders with verified values):
 
-“Created draft revision [number] for [listing].
+“Created staging draft revision [number] for [listing].
 - New revision: [full OCID]
 - Status: New / Active
 - Source revision: [number and full OCID]
 - Work request: [ID, if available]
 
-You can now review and edit the draft in Marketplace → Publisher → Listings.”
+You can now review and edit the draft in the staging Console: Marketplace → Publisher → Listings.”
 
-Use an observed Console URL when available; otherwise provide the navigation path and ID instead of inventing a deep link. If verification is incomplete, lead with that and the exact remaining check. Preserve a created draft's ID even when copy verification fails. Do not label a draft approved or published.
+Use a verified staging Console URL when available; otherwise provide `https://cloud-staging.oracle.com`, the navigation path, and ID instead of inventing a deep link. If verification is incomplete, lead with that and the exact remaining check. Preserve a created draft's ID even when copy verification fails. Do not label a draft approved or published.
