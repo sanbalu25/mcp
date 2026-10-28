@@ -23,15 +23,15 @@ Prevent inherited endpoint defaults from changing routing: create an empty tempo
 
 ## Browser authentication
 
-Every new invocation requires a fresh OCI session and an isolated browser profile. Use the production region above and a tenancy name only if supplied for this invocation. Pick an unused dedicated OCI profile and a new private, empty browser data directory; do not overwrite or reuse previous profiles. Normal replies within this invocation can finish its pending login. A repeated skill invocation or restart replaces its owned pending login before opening a new one.
+Every new invocation requires a fresh OCI session and an unused dedicated OCI profile. Use the production region above and a tenancy name only if supplied for this invocation. Use an isolated browser profile by default. If the publisher explicitly requests their existing browser, open this invocation's exact generated login URL there and skip isolated-profile creation and cleanup; existing cookies may select the account, so derive tenancy from the newly validated OCI session. Do not reuse previous OCI profiles or tokens. Normal replies within this invocation can finish its pending login. A repeated skill invocation or restart replaces its owned pending login before opening a new one.
 
-OCI CLI 3.64 uses the system browser opener, which can reuse signed-in cookies. Before authentication, suppress its normal-browser launch with a verified, command-scoped hook, then open its exact generated URL in a browser with a new data directory. On macOS/Linux, verify `/usr/bin/true` exists and is executable; the successful no-op below was checked against this CLI's browser opener. Do not use a failing hook, which can fall back to the normal browser. Do not use `--no-browser`: that flow can authenticate using existing credentials.
+OCI CLI 3.64 uses the system browser opener, which can reuse signed-in cookies. For isolated login, suppress its normal-browser launch with a verified, command-scoped hook, then open its exact generated URL in a browser with a new data directory. On macOS/Linux, verify `/usr/bin/true` exists and is executable; the successful no-op below was checked against this CLI's browser opener. Do not use a failing hook, which can fall back to the normal browser. For explicitly requested existing-browser login, omit this hook to use the system browser, or keep suppression and open the generated URL in the requested existing browser. Do not use `--no-browser`: that flow can authenticate using existing credentials.
 
 ```sh
 BROWSER='/usr/bin/true %s' env -u OCI_CLI_ENDPOINT oci --cli-rc-file "$empty_cli_rc" --config-file "$config_file" --profile "$session_profile" --auth security_token session authenticate --region "$region" --profile-name "$session_profile" --config-location "$config_file"
 ```
 
-Optionally add `--tenancy-name "$tenancy_name"` only for a name supplied in this invocation. Keep the CLI process and localhost callback running. Capture `login_url` exactly from this process's output; do not construct, edit, or reuse an old login URL. Launch an existing Chrome/Chromium browser binary with a freshly created private directory (for example, one made with `mktemp -d` under a restrictive umask):
+Optionally add `--tenancy-name "$tenancy_name"` only for a name supplied in this invocation. Keep the CLI process and localhost callback running. Capture `login_url` exactly from this process's output; do not construct, edit, or reuse an old login URL. For isolated login, launch an installed Chrome/Chromium browser binary with a freshly created private directory (for example, one made with `mktemp -d` under a restrictive umask):
 
 ```sh
 "$browser_executable" --user-data-dir="$browser_profile_dir" --no-first-run --no-default-browser-check --new-window "$login_url"
@@ -45,7 +45,7 @@ Track only this invocation's login process, browser window, and temporary direct
 env -u OCI_CLI_ENDPOINT oci --cli-rc-file "$empty_cli_rc" --config-file "$config_file" --profile "$session_profile" --auth security_token --region "$region" session validate
 ```
 
-Only then read the new profile's tenancy OCID and region; use `oci iam tenancy get --tenancy-id "$tenancy_id"` with the explicit globals below to obtain its name when permitted. Show the actual account and region. Match an account explicitly supplied in this invocation before any compartment/listing discovery; if its name cannot be verified, ask for the intended tenancy OCID. When no account was selected, require confirmation of the observed account. On mismatch, stop that scope and repeat isolated login. Local expiry parsing alone does not validate access. A connection failure or resource authorization error does not by itself mean the token expired.
+Only then read the new profile's tenancy OCID and region; use `oci iam tenancy get --tenancy-id "$tenancy_id"` with the explicit globals below to obtain its name when permitted. Show the actual account and region as information and automatically proceed to compartment/listing discovery; no tenancy confirmation is required. Match an account explicitly supplied in this invocation before discovery; if its name cannot be verified, ask for the intended tenancy OCID. On a known mismatch, stop that scope and repeat login for the requested account, without searching the mismatched tenancy or asking permission to accept it. Local expiry parsing alone does not validate access. A connection failure or resource authorization error does not by itself mean the token expired.
 
 ## Resource commands
 
@@ -62,7 +62,7 @@ oci iam compartment list --compartment-id "$tenancy_id" --compartment-id-in-subt
 oci --endpoint "$publisher_endpoint" marketplace-publisher listing-collection list-listings --compartment-id "$compartment_id" --all
 oci --endpoint "$publisher_endpoint" marketplace-publisher listing get --listing-id "$listing_id"
 oci --endpoint "$publisher_endpoint" marketplace-publisher publisher get --publisher-id "$publisher_id"
-oci --endpoint "$publisher_endpoint" marketplace-publisher listing-revision-collection list-listing-revisions --listing-id "$listing_id" --all
+oci --endpoint "$publisher_endpoint" marketplace-publisher listing-revision-collection list-listing-revisions --listing-id "$listing_id" --compartment-id "$compartment_id" --all
 oci --endpoint "$publisher_endpoint" marketplace-publisher listing-revision get --listing-revision-id "$revision_id"
 oci --endpoint "$publisher_endpoint" marketplace-publisher listing-revision-package-collection list-listing-revision-packages --listing-revision-id "$revision_id" --all
 oci --endpoint "$publisher_endpoint" marketplace-publisher listing-revision-package get --listing-revision-package-id "$package_id"
@@ -74,6 +74,8 @@ oci --endpoint "$publisher_endpoint" marketplace-publisher work-request-log-entr
 ```
 
 Include the root explicitly: IAM subtree results do not include the root. Establish each command's response shape from unprojected evidence for the installed version before applying projections. Fetch all pages, following `opc-next-page` when `--all` is unavailable. Never combine `--all` and `--limit`. Do not filter sibling revision inventory to active records only.
+
+For revision discovery, set `compartment_id` from the retrieved parent listing's `compartment-id` and include it with `listing_id`; production may reject the revision list request without it. Do not substitute the tenancy root unless the parent listing actually belongs there.
 
 Filter work requests to the selected listing or its revision IDs using returned resource references and operation types; unrelated compartment work requests do not block cloning. A denied work request listing is a capability gap: check revision transitions and known operation IDs, then mark unresolved operation evidence Needs verification if it prevents establishing that cloning is safe. Do not assume no operation exists.
 
@@ -94,7 +96,7 @@ The following row projections match the installed CLI 3.64 models; adapt only af
 Wrap the row projection in `merge(@, {data: data[*].<row>})` for compartments, `merge(@, {data: merge(data, {items: data.items[*].<row>})})` for Publisher collections, or `merge(@, {data: data.<row>})` for a polling GET, replacing `<row>` with the table's expression. `merge` preserves exposed top-level ETag, pagination, and request/work request IDs. Example (include the explicit authentication globals above):
 
 ```sh
-oci --endpoint "$publisher_endpoint" marketplace-publisher listing-revision-collection list-listing-revisions --listing-id "$listing_id" --all --query 'merge(@, {data: merge(data, {items: data.items[*].{id:id,"listing-id":"listing-id","compartment-id":"compartment-id","display-name":"display-name","listing-type":"listing-type","package-type":"package-type",status:status,"lifecycle-state":"lifecycle-state","time-created":"time-created","time-updated":"time-updated"}})})'
+oci --endpoint "$publisher_endpoint" marketplace-publisher listing-revision-collection list-listing-revisions --listing-id "$listing_id" --compartment-id "$compartment_id" --all --query 'merge(@, {data: merge(data, {items: data.items[*].{id:id,"listing-id":"listing-id","compartment-id":"compartment-id","display-name":"display-name","listing-type":"listing-type","package-type":"package-type",status:status,"lifecycle-state":"lifecycle-state","time-created":"time-created","time-updated":"time-updated"}})})'
 ```
 
 Keep work request `resources` whole, including resource metadata used for attribution; the current work request model already contains little dispensable data. Summaries omit some detail fields, including listing ownership and revision lineage. Fetch unprojected details for ownership, readiness, content/package validation, and final copy checks. A missing field or null/wrong-shaped collection is not absence: read unprojected output and resolve the schema/evidence gap. Reuse verified schemas/queries with the command knowledge above. Do not project the clone response. Capture IDs only when exposed; never enable `--debug` to recover suppressed headers.

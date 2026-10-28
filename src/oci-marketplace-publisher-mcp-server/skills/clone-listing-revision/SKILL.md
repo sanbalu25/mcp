@@ -1,11 +1,11 @@
 ---
 name: clone-listing-revision
-description: Helps OCI Marketplace publishers clone an eligible listing revision into a new draft in production. Use to clone a production revision or find eligible production sources; starts a fresh isolated browser login and checks eligibility before cloning.
+description: Helps OCI Marketplace publishers clone an eligible listing revision into a new draft in production. Use to clone a production revision or find eligible production sources; signs in through OCI CLI, discovers the authenticated tenancy's listings, and checks eligibility before cloning.
 ---
 
 # Clone listing revision
 
-Guide a publisher from Oracle sign-in to a verified new draft under the same listing. Run the CLI work for them and explain results in plain language. The only service integration required is the installed OCI CLI, which Codex runs through the local terminal. The publisher completes OCI browser login in a fresh, isolated browser profile. Creating or reviewing the skill is not a request to clone a live resource.
+Guide a publisher from Oracle sign-in to a verified new draft under the same listing. Run the CLI work for them and explain results in plain language. The only service integration required is the installed OCI CLI, which Codex runs through the local terminal. The publisher completes OCI browser login in an isolated browser profile by default, or their existing browser when explicitly requested. Creating or reviewing the skill is not a request to clone a live resource.
 
 Load [OCI access and commands](references/oci-cli.md) before access, [required checks](references/checks.md) before deciding eligibility, and [publisher responses and recovery](references/publisher-flow.md) when presenting choices, observing a clone, or handling a blocker. Reuse already loaded references unless their contents change.
 
@@ -21,11 +21,11 @@ This version targets **Production — Ashburn (`us-ashburn-1`)**. Use `https://c
 
 At every new invocation, including a repeated `$clone-listing-revision` invocation or explicit restart, explain the requested inspection or cloning task, then say: “First, sign in to the OCI tenancy that owns your Marketplace listings.” Check OCI CLI availability; if missing, give the official setup link in the command reference and offer setup assistance.
 
-Run a new `oci session authenticate` with an unused dedicated OCI profile and the [isolated browser login](references/oci-cli.md#browser-authentication) procedure. Never reuse an earlier invocation's token, saved profile, browser cookies, tenancy, or compartment, even if its session is valid. A new browser tab/window or OCI profile alone does not provide fresh browser authentication. Let the publisher complete Oracle sign-in and MFA themselves.
+Run a new `oci session authenticate` with an unused dedicated OCI profile and the [browser login](references/oci-cli.md#browser-authentication) procedure. Use an isolated browser profile unless the publisher explicitly requests their existing browser. Never reuse an earlier invocation's token, saved OCI profile, tenancy, or compartment, even if its session is valid. Existing-browser login can retain browser cookies; it still requires a new OCI session. Let the publisher complete Oracle sign-in and MFA themselves.
 
 Ordinary replies such as “done,” source selection, and polling continue the current invocation; they do not start another login. If a fresh invocation replaces a pending login, stop only that invocation's owned login process and isolated login window before starting the new one; do not leave competing callbacks. After login, validate the new session and bind all reads and the clone to its explicit config, profile, region, and `--auth security_token`. Add the production endpoint to every Publisher call; keep OCI identity calls on their own service endpoint.
 
-Use the configured production region and only a tenancy supplied for this invocation; otherwise let the publisher select the tenancy during fresh login. Show Production, the authenticated tenancy name when available, its OCID suffix, and region before compartment/listing discovery. Proceed when it matches an account explicitly selected for this invocation. If no account was selected, require the publisher to confirm the observed account first. If a requested name cannot be verified, ask the publisher to identify the intended tenancy by OCID. A valid token does not establish the intended publisher account or production access. If the account is wrong, repeat isolated login without searching its compartments. Never collect passwords, MFA codes, keys, or token contents in chat.
+Use the configured production region and derive the tenancy from this invocation's validated session. Show Production, the authenticated tenancy name when available, its OCID suffix, and region as information, then automatically discover its listings without tenancy-level confirmation. If the publisher explicitly supplied a different target tenancy, resolve that mismatch through a new login before discovery; do not query the known-wrong account or ask permission to accept the mismatch. If a requested tenancy name cannot be verified, ask for its OCID to resolve the target. A valid token does not establish production access or ownership of a selected listing; verify those through the reads below. Never collect passwords, MFA codes, keys, or token contents in chat.
 
 ## 2. Find the source
 

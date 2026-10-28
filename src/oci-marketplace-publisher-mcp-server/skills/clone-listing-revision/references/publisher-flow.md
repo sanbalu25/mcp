@@ -14,7 +14,7 @@ Example layout only; populate it from real reads:
 | 2 | Data Connector | 2 | Published as private | Existing draft: continue revision 3 |
 | 3 | Reporting App | 7 | Published | Verify current OCMA status |
 
-Label choices **Production — Ashburn** and show the account/compartment when it disambiguates otherwise identical names. Keep exact source/parent IDs mapped to each option and its environment/endpoint; show the full selected source ID before cloning. Offer “Clone option 1” only for a ready option. Do not ask for public/private visibility: cloning produces a draft.
+Label choices **Production — Ashburn** and show the account/compartment when it disambiguates otherwise identical names. Keep exact source/parent IDs mapped to each option and its environment/endpoint; show the full selected source ID before cloning. Offer “Clone option 1” only for a ready option. Obtain the publisher's choice at the listing/revision level; an unambiguous existing request to clone that source already authorizes it and needs no repeated confirmation. Do not ask for public/private visibility: cloning produces a draft.
 
 Summarize checks with a short table: **Check | Result | Evidence or next action**. For multiple candidates, share publisher-level evidence once and report revision/package differences separately. Use Pass, Needs attention, Needs verification, Not applicable consistently. Do not ask the publisher to approve away an unresolved check.
 
@@ -34,11 +34,11 @@ Preserve request/work request IDs and the pre-clone sibling inventory. Resolve a
 | Situation | Action and publisher-facing explanation |
 |---|---|
 | CLI absent | Provide the official OCI CLI installation link; offer setup help. Do not silently install or upgrade |
-| Browser login pending within this invocation | Keep its isolated window and login process alive and wait in bounded intervals; say “Complete sign-in in the Oracle browser window.” A normal “done” reply continues this login |
+| Browser login pending within this invocation | Keep its login process alive and wait in bounded intervals; say “Complete sign-in in the Oracle browser window.” A normal “done” reply continues this login |
 | Login canceled/timed out | Explain the outcome and offer another sign-in; do not spawn repeated login windows |
-| Repeated skill invocation or explicit restart | Start a fresh isolated browser login and unused OCI profile, even if the old session is valid. First stop only the prior invocation's owned pending login/window so callbacks do not compete |
-| Login completed without a current account selection | Show actual tenancy name/OCID suffix and region; obtain account confirmation before searching compartments or listings |
-| Browser selected an unexpected tenancy | Repeat isolated login for the intended account and verify it before discovery; do not query known-wrong compartments |
+| Repeated skill invocation or explicit restart | Start a fresh browser login and unused OCI profile, even if the old session is valid; use isolation unless the publisher explicitly requested their existing browser. First stop only the prior invocation's owned pending login/window so callbacks do not compete |
+| Login completed without a supplied target tenancy | Show actual tenancy name/OCID suffix and region as information, then automatically discover its compartments/listings without asking for tenancy confirmation |
+| Browser selected a tenancy different from an explicitly supplied target | Repeat login for the requested account and verify it before discovery; do not query the known-wrong tenancy or ask the publisher to approve the mismatch |
 | Production endpoint unreachable or denied | Report the production endpoint/region and specific failure; resolve network/access requirements. Do not try staging or beta endpoints |
 | Supplied link or saved operation belongs to another environment | Resolve the environment mismatch before inspecting resources; do not carry source choices, approval evidence, or operation IDs across environments |
 | OCI says NotAuthorizedOrNotFound | Say “OCI could not authorize this lookup or locate the resource.” Check account/region and the supplied resource once; ask for the intended Console link or administrator assistance. Do not say the resource is missing or that the session token is invalid |
