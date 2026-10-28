@@ -16,9 +16,9 @@ Missing/projected-out fields for clone-blocking checks require detailed reads, n
 | Session | Fresh `oci session authenticate` through the publisher's existing browser profile, unused OCI configuration profile, successful `oci session validate`, and actual tenancy/region recorded; match a target tenancy when explicitly supplied | Complete and validate fresh OCI login using the same browser profile, then discover automatically without account confirmation; resolve an explicit target mismatch first and never reuse a previous invocation's OCI credentials |
 | Ownership | Parent listing's `publisher-id` resolves to the intended publisher in the authenticated tenancy and authorized compartment | Resolve the selected account/listing first; use compartment ancestry if needed |
 | Publisher registration | Detailed `publisher-status == APPROVED`; no authoritative suspension indication | Show the exact status and direct the publisher to their Publisher profile/support |
-| Publisher logo | Uploaded publisher profile content confirmed through a supported OCI CLI read/content command or publisher-provided current Console profile evidence | Explicitly empty logo needs attention; missing capability/filename-only evidence needs verification |
+| Publisher logo | The detailed publisher response contains a `logo` field whose value is not null | `logo: null` needs attention; an omitted field needs verification through a detailed publisher read or current publisher-provided evidence |
 
-Older logo models use `logo.content-url`; newer models can expose profile/content operations. Confirm content without displaying or retaining signed URLs. A listing icon does not satisfy the publisher logo check. Do not infer dimensions or full artwork compliance merely from presence.
+This is a presence check only: a non-null publisher `logo` passes. Do not download or view the image, validate its URL or dimensions, reject a default-looking filename, or request visual confirmation. A listing icon does not satisfy the publisher logo check. Presence does not establish artwork compliance.
 
 The logo and package-quality checks are this workflow's requested clone readiness requirements. They do not imply every deployment enforces them during clone.
 

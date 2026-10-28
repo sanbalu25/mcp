@@ -43,7 +43,7 @@ Use the command reference's output projections for discovery and polling. Keep t
 
 Evaluate all applicable rules in [required checks](references/checks.md), including:
 
-- Blocking: session identity, publisher ownership, approved registration, and publisher logo.
+- Blocking: session identity, publisher ownership, approved registration, and a non-null publisher `logo` field.
 - Active parent/source, supported source status, no conflicting draft or operation.
 - For package sources: usable packages, exactly one default, unique version names within the source, and no whitespace in package names or versions.
 - Advisory: OPN membership and OCMA status/validity. Inactive, expired, unapproved, or unverified OPN/OCMA evidence does not block cloning or require a separate acknowledgment.
