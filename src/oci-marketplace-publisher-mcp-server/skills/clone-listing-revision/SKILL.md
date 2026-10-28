@@ -1,0 +1,70 @@
+---
+name: clone-listing-revision
+description: Helps OCI Marketplace publishers create a new draft by cloning an existing listing revision. Use when a publisher asks to clone a revision or find revisions eligible for cloning; authenticates with OCI session login and checks eligibility before cloning.
+---
+
+# Clone listing revision
+
+Guide a publisher from Oracle sign-in to a verified new draft under the same listing. Run the CLI work for them and explain results in plain language. The only service integration required is the installed OCI CLI, which Codex runs through the local terminal. The publisher completes the browser login opened by OCI CLI. Creating or reviewing the skill is not a request to clone a live resource.
+
+Read [OCI access and commands](references/oci-cli.md) before access, [required checks](references/checks.md) before deciding eligibility, and [publisher responses and recovery](references/publisher-flow.md) when presenting choices or handling a blocker.
+
+## OCI CLI-only execution
+
+Use `oci` commands for authentication, discovery, checks, cloning, and status polling. Do not discover, call, or ask the publisher to install MCP servers, connectors, browser automation, marctl, internal APIs, or a separate SDK. Normal Codex terminal/file access is sufficient. Do not introduce Python, jq, or another utility as an installation prerequisite; interpret CLI JSON using the capabilities already available.
+
+Any Console step is performed by the publisher, not browser automation. Treat a pasted Console link as a resource locator: extract an OCID/region only when present and verify them through OCI CLI; otherwise ask for the resource OCID. For checks absent from installed CLI output, request the specific publisher-provided evidence described below and keep the check blocked until verified. Never require a missing integration or invent an API/CLI command to fill the gap.
+
+## 1. Sign in to the publisher account
+
+For a new workflow with no authenticated or pending session, start with: “I’ll help you create a new draft from an existing revision. First, sign in to the OCI tenancy that owns your Marketplace listings.” Check OCI CLI availability; if missing, give the official setup link in the command reference and offer setup assistance.
+
+Use `oci session authenticate` with an unused dedicated profile. Let the publisher complete Oracle sign-in and MFA in their browser. Never choose `DEFAULT` or an unrelated saved session as their identity. Continue the session already authenticated for this workflow in this chat after validation; use a different existing profile only when the publisher explicitly selects it.
+
+Keep a pending login alive and check its completion when the publisher returns. Do not start duplicate logins or ask them to repeat completed steps. If login expires or fails, explain the specific outcome before restarting. Validate the resulting session, then bind all reads and the clone to its explicit config, profile, region, and `--auth security_token`.
+
+Show the authenticated tenancy name when available, its OCID suffix, and region. Use the publisher-supplied tenancy/region; otherwise use the supported commercial Publisher region (`us-ashburn-1`) and let them choose their tenancy at login. Ask about scope only when ambiguous or inconsistent with their request. Never collect passwords, MFA codes, keys, or token contents in chat.
+
+## 2. Find the source
+
+Accept a listing name, revision OCID, listing OCID, or Oracle Console link. A name is a search hint, not a unique identifier. Resolve a supplied revision to its parent listing. For an ambiguous name, show matches with compartment and publisher names; let the publisher choose. If no target was supplied, discover listings in the authenticated tenancy and offer a short selection list instead of requiring the publisher to locate OCIDs.
+
+Prefer the supplied listing or compartment. Otherwise search the tenancy root and accessible active compartments, including the root explicitly. Describe accessible compartments as places being searched, not as the publisher's confirmed location. If discovery is denied, use a supplied resource directly or ask for its Console link/compartment. Never equate access denied or a partial search with “no listings.” Do not repeatedly search a scope already known to be wrong or denied.
+
+Read the parent listing, its actual publisher, and all sibling revision pages. Consider supported published sources for cloning. An existing active/updating `NEW` draft blocks another clone: show that draft and the appropriate next step. Check a narrowed candidate before performing expensive inventory reads; do not require publisher-wide package scans to inspect one source.
+
+## 3. Check eligibility
+
+Evaluate all applicable rules in [required checks](references/checks.md), including:
+
+- Session identity, publisher ownership, approved registration, active OPN, active OCMA, and publisher logo.
+- Active parent/source, supported source status, no conflicting draft or operation.
+- For package sources: usable packages, exactly one default, unique version names within the source, and no whitespace in package names or versions.
+
+Use **Pass**, **Needs attention**, **Needs verification**, and **Not applicable** with evidence. Needs attention and Needs verification both block cloning. Missing CLI response fields are not failures or passes. First use supported OCI CLI read commands; then ask the publisher to provide the precise current Console/Oracle evidence needed for an unavailable check. Record its publisher/OPN identity, source, validity, and verification time. A generic “yes” must not silently resolve multiple unrelated checks.
+
+Preserve the requested OPN/OCMA/logo/package gates. Explain them as this workflow's readiness requirements; do not claim they are all service-enforced clone restrictions. Offer concrete next steps, not raw exceptions or a blanket request to “fix permissions.” Never repair a published source, delete a draft, accept agreements, or change statuses as an implicit part of cloning.
+
+## 4. Select and clone
+
+Show the ready candidates and blockers using the compact format in [publisher responses](references/publisher-flow.md). Keep an exact mapping from each option to the full source and parent IDs. For the chosen option, show the listing, revision, publisher/compartment, and successful checks, and state that cloning creates a draft under that listing. Public/private visibility selection is unnecessary for cloning.
+
+“Clone option 2” authorizes that displayed source. If the original request already unambiguously identifies a source and asks to clone it, show the successful checks and proceed without another identical confirmation. A request only to inspect or check eligibility does not authorize a clone. Never choose among multiple sources on the publisher's behalf.
+
+Immediately before cloning, refresh the source, parent, publisher, all sibling pages, package inventory/details, and relevant operation evidence; confirm external evidence is still current. Re-run all checks. If anything affecting identity, source content, or eligibility changed, show the new result and resolve it before proceeding. Snapshot the source ETag and sibling IDs.
+
+Send one clone request with the latest ETag when available and automatic mutation retries disabled. An ETag protects the source; it cannot prevent a concurrent sibling draft, which the service still validates. Preserve returned request/work request IDs. Do not use a live clone call as a compatibility or permissions test.
+
+## 5. Verify and hand back the draft
+
+Poll separately in short intervals, checking both the work request and fresh sibling revisions. Keep the publisher informed while waiting, for up to ten minutes. If the initial response has no draft ID, resolve it from work request resources/source lineage and the before/after revision inventory. A successful command or accepted request alone is not completion.
+
+Report success only for a distinct, attributable revision under the same listing with `status == NEW` and `lifecycle-state == ACTIVE`, plus a successful work request when available. Verify copied content/inventory as described in the checks. If attribution or copying is uncertain, report “Created, verification pending” with the known draft ID, rather than “Ready.” Preserve the source's publication status and flag unexpected changes.
+
+On timeout or interruption, retain nonsecret context in the chat: profile/config path, region, parent/source IDs, baseline sibling IDs, and known request/draft IDs. Resume inspection of that operation; do not issue another clone. Handle definite failures through [recovery guidance](references/publisher-flow.md). Finish with the new draft ID and next action. Editing, submission, and publication require separate requests.
+
+## Example requests
+
+- “Use $clone-listing-revision to show which of my listings I can clone.”
+- “Use $clone-listing-revision to clone the published revision of Analytics Connector.”
+- “Use $clone-listing-revision to check this listing before cloning: <Console link>.”
