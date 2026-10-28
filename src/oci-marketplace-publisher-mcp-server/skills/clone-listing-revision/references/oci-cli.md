@@ -6,19 +6,29 @@ Resolve paths from the publisher's environment: use their requested OCI config, 
 
 ## Browser authentication
 
-Resolve the publisher's requested region/realm first; commercial Publisher resources ordinarily use `us-ashburn-1`. Let the publisher choose the tenancy during Oracle login unless they supplied its name. Pick an unused dedicated profile name; never overwrite an unrelated profile. Reuse the session already created for this workflow when resuming, after validation. If the browser login process is still pending, resume that process instead of starting another listener.
+Every new invocation requires a fresh OCI session and an isolated browser profile. Resolve the region/realm from this invocation; commercial Publisher resources ordinarily use `us-ashburn-1`. Use a tenancy name only if supplied for this invocation. Pick an unused dedicated OCI profile and a new private, empty browser data directory; do not overwrite or reuse previous profiles. Normal replies within this invocation can finish its pending login. A repeated skill invocation or restart replaces its owned pending login before opening a new one.
+
+OCI CLI 3.64 uses the system browser opener, which can reuse signed-in cookies. Before authentication, suppress its normal-browser launch with a verified, command-scoped hook, then open its exact generated URL in a browser with a new data directory. On macOS/Linux, verify `/usr/bin/true` exists and is executable; the successful no-op below was checked against this CLI's browser opener. Do not use a failing hook, which can fall back to the normal browser. Do not use `--no-browser`: that flow can authenticate using existing credentials.
 
 ```sh
-oci session authenticate --region "$region" --profile-name "$session_profile" --config-location "$config_file"
+BROWSER='/usr/bin/true %s' oci session authenticate --region "$region" --profile-name "$session_profile" --config-location "$config_file"
 ```
 
-Optionally add `--tenancy-name "$tenancy_name"` only for a publisher-supplied name. Leave browser authentication to the publisher; do not request passwords, MFA responses, keys, or tokens in chat. If browser launch fails, show the CLI-provided instructions. Use the config path/profile reported on successful login and validate through OCI:
+Optionally add `--tenancy-name "$tenancy_name"` only for a name supplied in this invocation. Keep the CLI process and localhost callback running. Capture `login_url` exactly from this process's output; do not construct, edit, or reuse an old login URL. Launch an existing Chrome/Chromium browser binary with a freshly created private directory (for example, one made with `mktemp -d` under a restrictive umask):
+
+```sh
+"$browser_executable" --user-data-dir="$browser_profile_dir" --no-first-run --no-default-browser-check --new-window "$login_url"
+```
+
+Resolve the executable from the actual installation and pass arguments with proper quoting; do not use `eval`. This only launches the login window; the publisher performs all browser interaction. Never point `browser_profile_dir` at an existing browser profile or sync it with an existing account. Ordinary private/incognito windows can share an already-open private session and are not sufficient by themselves. On other platforms, use a verified equivalent suppression/isolation mechanism; if unavailable or overridden by browser policy, explain the limitation and resolve a fresh login path instead of falling back to saved sessions. Do not install a browser or runtime implicitly.
+
+Track only this invocation's login process, browser window, and temporary directory for cleanup; never close the publisher's regular browser or delete its profiles. After successful, failed, or canceled authentication, close the owned isolated window and remove its temporary directory only after confirming that its browser process has exited. If ownership or shutdown cannot be verified, leave the private directory in place and never reuse it. Do not remove OCI profiles or tokens as browser cleanup. A fresh browser profile isolates stored cookies but does not guarantee that enterprise SSO cannot select an account. Verify the resulting tenancy as below. Leave sign-in and MFA to the publisher; do not request passwords, MFA responses, keys, or tokens in chat. Use the config path/profile reported on successful login and validate through OCI:
 
 ```sh
 oci --config-file "$config_file" --profile "$session_profile" --auth security_token --region "$region" session validate
 ```
 
-Only then read the profile's tenancy OCID and region. Local expiry parsing alone does not validate access. An invalid or expired session requires sign-in again for the intended publisher. A connection failure or resource authorization error does not by itself mean the token expired; inspect the error category before asking for another login.
+Only then read the new profile's tenancy OCID and region; use `oci iam tenancy get --tenancy-id "$tenancy_id"` with the explicit globals below to obtain its name when permitted. Show the actual account and region. Match an account explicitly supplied in this invocation before any compartment/listing discovery; if its name cannot be verified, ask for the intended tenancy OCID. When no account was selected, require confirmation of the observed account. On mismatch, stop that scope and repeat isolated login. Local expiry parsing alone does not validate access. A connection failure or resource authorization error does not by itself mean the token expired.
 
 ## Resource commands
 
@@ -87,6 +97,8 @@ Capture work request ID from the clone response when exposed and follow [targete
 ## Official references and compatibility
 
 - [Oracle session authentication](https://docs.oracle.com/en-us/iaas/Content/API/SDKDocs/clitoken.htm)
+- [Browser launch override](https://docs.python.org/3.13/library/webbrowser.html)
+- [Chromium profile isolation](https://chromium.googlesource.com/chromium/src/+/HEAD/docs/user_data_dir.md)
 - [Oracle clone guide](https://docs.oracle.com/en-us/iaas/Content/Marketplace/Tasks/clone-listing.htm)
 - [Clone CLI reference](https://docs.oracle.com/en-us/iaas/tools/oci-cli/latest/oci_cli_docs/cmdref/marketplace-publisher/listing-revision/clone.html)
 - [OCI CLI query option](https://docs.oracle.com/en-us/iaas/tools/oci-cli/latest/oci_cli_docs/oci.html#cmdoption-query)

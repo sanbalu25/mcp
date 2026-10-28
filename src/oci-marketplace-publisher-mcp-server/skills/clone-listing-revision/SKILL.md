@@ -1,11 +1,11 @@
 ---
 name: clone-listing-revision
-description: Helps OCI Marketplace publishers create a new draft by cloning an existing listing revision. Use when a publisher asks to clone a revision or find revisions eligible for cloning; authenticates with OCI session login and checks eligibility before cloning.
+description: Helps OCI Marketplace publishers create a new draft by cloning an existing listing revision. Use when a publisher asks to clone a revision or find revisions eligible for cloning; starts a fresh isolated browser login and checks eligibility before cloning.
 ---
 
 # Clone listing revision
 
-Guide a publisher from Oracle sign-in to a verified new draft under the same listing. Run the CLI work for them and explain results in plain language. The only service integration required is the installed OCI CLI, which Codex runs through the local terminal. The publisher completes the browser login opened by OCI CLI. Creating or reviewing the skill is not a request to clone a live resource.
+Guide a publisher from Oracle sign-in to a verified new draft under the same listing. Run the CLI work for them and explain results in plain language. The only service integration required is the installed OCI CLI, which Codex runs through the local terminal. The publisher completes OCI browser login in a fresh, isolated browser profile. Creating or reviewing the skill is not a request to clone a live resource.
 
 Load [OCI access and commands](references/oci-cli.md) before access, [required checks](references/checks.md) before deciding eligibility, and [publisher responses and recovery](references/publisher-flow.md) when presenting choices, observing a clone, or handling a blocker. Reuse already loaded references unless their contents change.
 
@@ -17,13 +17,13 @@ Any Console step is performed by the publisher, not browser automation. Treat a 
 
 ## 1. Sign in to the publisher account
 
-For a new workflow with no authenticated or pending session, start with: “I’ll help you create a new draft from an existing revision. First, sign in to the OCI tenancy that owns your Marketplace listings.” Check OCI CLI availability; if missing, give the official setup link in the command reference and offer setup assistance.
+At every new invocation, including a repeated `$clone-listing-revision` invocation or explicit restart, explain the requested inspection or cloning task, then say: “First, sign in to the OCI tenancy that owns your Marketplace listings.” Check OCI CLI availability; if missing, give the official setup link in the command reference and offer setup assistance.
 
-Use `oci session authenticate` with an unused dedicated profile. Let the publisher complete Oracle sign-in and MFA in their browser. Never choose `DEFAULT` or an unrelated saved session as their identity. Continue the session already authenticated for this workflow in this chat after validation; use a different existing profile only when the publisher explicitly selects it.
+Run a new `oci session authenticate` with an unused dedicated OCI profile and the [isolated browser login](references/oci-cli.md#browser-authentication) procedure. Never reuse an earlier invocation's token, saved profile, browser cookies, tenancy, or compartment, even if its session is valid. A new browser tab/window or OCI profile alone does not provide fresh browser authentication. Let the publisher complete Oracle sign-in and MFA themselves.
 
-Keep a pending login alive and check its completion when the publisher returns. Do not start duplicate logins or ask them to repeat completed steps. If login expires or fails, explain the specific outcome before restarting. Validate the resulting session, then bind all reads and the clone to its explicit config, profile, region, and `--auth security_token`.
+Ordinary replies such as “done,” source selection, and polling continue the current invocation; they do not start another login. If a fresh invocation replaces a pending login, stop only that invocation's owned login process and isolated login window before starting the new one; do not leave competing callbacks. After login, validate the new session and bind all reads and the clone to its explicit config, profile, region, and `--auth security_token`.
 
-Show the authenticated tenancy name when available, its OCID suffix, and region. Use the publisher-supplied tenancy/region; otherwise use the supported commercial Publisher region (`us-ashburn-1`) and let them choose their tenancy at login. Ask about scope only when ambiguous or inconsistent with their request. Never collect passwords, MFA codes, keys, or token contents in chat.
+Use only a tenancy/region supplied for this invocation; otherwise use the supported commercial Publisher region (`us-ashburn-1`) and let the publisher select the tenancy during fresh login. Show the authenticated tenancy name when available, its OCID suffix, and region before compartment/listing discovery. Proceed when it matches an account explicitly selected for this invocation. If no account was selected, require the publisher to confirm the observed account first. If a requested name cannot be verified, ask the publisher to identify the intended tenancy by OCID. A valid token does not establish the intended publisher account. If the account is wrong, repeat isolated login without searching its compartments. Never collect passwords, MFA codes, keys, or token contents in chat.
 
 ## 2. Find the source
 
@@ -63,7 +63,7 @@ Follow [targeted polling](references/publisher-flow.md#observe-the-clone): poll 
 
 Report success only for a distinct, attributable revision under the same listing with `status == NEW` and `lifecycle-state == ACTIVE`, plus a successful work request when available. Verify copied content/inventory as described in the checks. For an attributable draft with incomplete copy verification, report “Created, verification pending” with its ID. If attribution is unresolved, report “Outcome uncertain” and retain any candidate IDs without choosing one. Preserve the source's publication status and flag unexpected changes.
 
-On timeout or interruption, retain nonsecret context in the chat: profile/config path, region, parent/source IDs, baseline sibling IDs, and known request/draft IDs. Resume inspection of that operation; do not issue another clone. Handle definite failures through [recovery guidance](references/publisher-flow.md). Finish with the new draft ID and next action. Editing, submission, and publication require separate requests.
+On timeout or interruption, retain nonsecret context in the chat: tenancy, region, parent/source IDs, baseline sibling IDs, and known request/draft IDs. A new invocation must authenticate afresh and verify the same target tenancy before inspecting that saved operation; keep old session details only as history, never as credentials to reuse. Do not issue another clone. Handle definite failures through [recovery guidance](references/publisher-flow.md). Finish with the new draft ID and next action. Editing, submission, and publication require separate requests.
 
 ## Example requests
 

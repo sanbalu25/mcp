@@ -31,7 +31,7 @@ The bundled publisher skills are in [`skills/`](skills/) and are intended for pu
 
 ### Clone a listing revision with OCI CLI
 
-The standalone [`clone-listing-revision` skill](skills/clone-listing-revision/SKILL.md) helps publishers create a new draft using their installed OCI CLI and a Codex-compatible runner with terminal access. It has no MCP server or other skill dependency. Sign-in uses `oci session authenticate`; the publisher completes Oracle login and MFA in the browser opened by OCI CLI.
+The standalone [`clone-listing-revision` skill](skills/clone-listing-revision/SKILL.md) helps publishers create a new draft using their installed OCI CLI and a Codex-compatible runner with terminal access. It has no MCP server or other skill dependency. Every new invocation uses `oci session authenticate` with a fresh OCI profile and an isolated browser profile; the publisher completes Oracle login and MFA and verifies the selected tenancy before listing discovery. An installed browser capable of profile isolation is required; the command reference documents the macOS/Linux flow and the boundary for other platforms.
 
 Copy the entire `skills/clone-listing-revision` directory from a pinned checkout or release into your runner's skills directory, including `agents/` and `references/`. For Codex, install it as `$CODEX_HOME/skills/clone-listing-revision` (normally `~/.codex/skills/clone-listing-revision`). Then ask:
 

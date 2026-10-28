@@ -34,10 +34,11 @@ Preserve request/work request IDs and the pre-clone sibling inventory. Resolve a
 | Situation | Action and publisher-facing explanation |
 |---|---|
 | CLI absent | Provide the official OCI CLI installation link; offer setup help. Do not silently install or upgrade |
-| Browser login pending | Keep the original process/session context and wait in bounded intervals; say “Complete sign-in in the Oracle browser window.” Continue after completion without requiring a ritual “done” |
+| Browser login pending within this invocation | Keep its isolated window and login process alive and wait in bounded intervals; say “Complete sign-in in the Oracle browser window.” A normal “done” reply continues this login |
 | Login canceled/timed out | Explain the outcome and offer another sign-in; do not spawn repeated login windows |
-| Repeated invocation while login is pending | Resume that login; do not create another profile or callback listener |
-| Browser selected an unexpected tenancy | Show the actual account and let the publisher choose the correct tenancy on a new login; do not query known-wrong compartments |
+| Repeated skill invocation or explicit restart | Start a fresh isolated browser login and unused OCI profile, even if the old session is valid. First stop only the prior invocation's owned pending login/window so callbacks do not compete |
+| Login completed without a current account selection | Show actual tenancy name/OCID suffix and region; obtain account confirmation before searching compartments or listings |
+| Browser selected an unexpected tenancy | Repeat isolated login for the intended account and verify it before discovery; do not query known-wrong compartments |
 | OCI says NotAuthorizedOrNotFound | Say “OCI could not authorize this lookup or locate the resource.” Check account/region and the supplied resource once; ask for the intended Console link or administrator assistance. Do not say the resource is missing or that the session token is invalid |
 | IAM compartment listing denied | Use a supplied listing/revision directly, or request a compartment/Console link; do not require broad IAM policy administration |
 | No candidates | Explain whether discovery completed or was partial, and whether an existing draft or unsupported state explains the result |
@@ -49,6 +50,8 @@ Preserve request/work request IDs and the pre-clone sibling inventory. Resolve a
 | Ten-minute observation limit reached | Say “Clone still in progress” with source and work request IDs; preserve context so a later “check again” inspects the same operation |
 
 A ten-minute observation limit bounds the current interactive wait; it does not cancel the service operation or prove failure. Do not create background monitoring unless requested.
+
+Re-entering the skill to check a saved operation requires fresh login and verification of its target tenancy. Preserve prior request/draft IDs for reconciliation, not the previous account as a login default. A new login never authorizes resending an unresolved clone.
 
 ## Final response
 
